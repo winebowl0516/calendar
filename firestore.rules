@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Assumed data model:
+    // Collection: accounts
+    // Document ID: Firebase Authentication UID (immutable by path)
+    // Fields (all required):
+    //   schemaVersion: int, exactly 1
+    //   payload: string containing the serialized account sync document,
+    //            limited to 850,000 characters
+    //   updatedAt: positive integer, milliseconds since Unix epoch
+    // The client reads one document and writes it through a transaction.
+    // Account payloads are private and may include calendar and pet details.
+    // Google accounts use Google Firebase Auth tokens. LINE accounts use a
+    // custom Firebase Auth token restricted to the line_<LINE user ID> path.
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(accountId) {
+      return isAuthenticated()
+        && request.auth.uid == accountId
+        && (('firebase' in request.auth.token
+            && request.auth.token.firebase.sign_in_provider == 'google.com')
+          || ('provider' in request.auth.token
+            && request.auth.token.provider == 'line'
+            && accountId.matches('^line_[A-Za-z0-9]+$')));
+    }
+
+    function isDocOwner(accountId) {
+      return isOwner(accountId);
+    }
+
+    // The Firebase UID is the immutable account document ID, not a payload field.
+    function uidUnchanged(accountId) {
+      return isOwner(accountId);
+    }
+
+    function uidNotModified(accountId) {
+      return isOwner(accountId);
+    }
+
+    function isValidAccountData() {
+      return request.resource.data.keys().hasAll(['schemaVersion', 'payload', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'payload', 'updatedAt'])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.payload is string
+        && request.resource.data.payload.size() <= 850000
+        && request.resource.data.updatedAt is int
+        && request.resource.data.updatedAt > 0;
+    }
+
+    match /accounts/{accountId} {
+      allow get: if isDocOwner(accountId);
+      allow list: if false;
+      allow create: if isOwner(accountId) && uidUnchanged(accountId) && isValidAccountData();
+      allow update: if isDocOwner(accountId) && uidNotModified(accountId) && isValidAccountData();
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,40 +1,44 @@
 # 日序專案交接
 
 更新日期：2026-11-20
-GitHub：<https://github.com/winebowl0516/calendar>
-目前分支：`main`
+GitHub Pages：<https://winebowl0516.github.io/calendar/>
+Firebase 專案：`daily-sequence`
 
-## 專案目標
+## 目前需求
 
-「日序」是手機優先的個人行程與任務管理 Web 應用。現有前端提供月曆、每日安排、任務代幣、電子寵物、商店，以及 Google／LINE 登入。產品規格見 [`PRD.md`](PRD.md)。
+網站只提供以下功能：
 
-## 目前狀態
+1. 空白行事曆，可新增、修改、刪除及完成行程；首次使用不建立示範行程。
+2. Google 登入，使用 Firebase Authentication。
+3. 使用 Firebase Firestore 儲存各 Google 帳號的行事曆資料。
+4. Gemini 行事曆助理，可依自然語句提出行程操作；每個新增、修改或刪除建議都由使用者確認後才會儲存。
 
-- 前端是根目錄的單頁 [`index.html`](index.html)，由 GitHub Pages 發佈於 `https://winebowl0516.github.io/calendar/`。
-- Google 登入由 Firebase Authentication 提供；LINE 登入由 LINE LIFF 提供。
-- 登入後，行程新增、編輯、刪除及完成狀態會同步到 Cloudflare D1；本機 `localStorage` 作為離線快取與首次資料遷移來源。寵物、代幣、物品與圖片仍只存在本機。
-- Cloudflare Worker `daily-sequence-sync` 已部署於 <https://daily-sequence-sync.matt05161997.workers.dev>，並綁定 D1 資料庫 `daily-sequence-data`（`DB`）。`account_data` 與 `identities` 資料表由 migration 建立。
-- 同步 API 以 Firebase Google ID token 或 LINE LIFF access token 驗證；D1 依登入提供者與使用者識別碼隔離資料。前端和 Worker 各自有同步實作，相關檔案：[`sync-client.js`](sync-client.js)、[`cloudflare/worker/src/index.js`](cloudflare/worker/src/index.js)、[`cloudflare/worker/wrangler.jsonc`](cloudflare/worker/wrangler.jsonc)、[`cloudflare/worker/migrations/0001_initial.sql`](cloudflare/worker/migrations/0001_initial.sql)。
-- 尚未提供 Google 與 LINE 帳號連結 UI；Worker 有 `POST /api/link`，但前端未呼叫。工作分支為 `main`，遠端為 `origin`。
+## 實作與部署狀態
 
-## 下一步工作（建議依序）
+- 前端是根目錄的單頁 [`index.html`](index.html)，使用 GitHub Pages 發佈。
+- Firebase Authentication 與 Firestore 使用公開 Web App 設定；Firestore 文件位於 `accounts/{Firebase Auth UID}`。
+- Firestore 文件沿用 `schemaVersion`、JSON `payload` 與 `updatedAt` 格式。行程以 `entries` 與 `entryTombstones` 儲存；讀取舊文件時保留既有其他欄位。
+- 安全規則位於 [`firestore.rules`](firestore.rules)，限制帳號只能讀寫自己的文件。
+- Cloudflare Worker 位於 [`cloudflare/worker/src/index.js`](cloudflare/worker/src/index.js)，舊 `/api/data` 僅用於首次匯入既有 D1 行程；新行程直接同步至 Firestore。
+- Gemini 由瀏覽器的 Firebase AI Logic SDK 呼叫 Gemini Developer API，模型為 `gemini-3.8-flash`，不使用 Worker API key。
+- 前端先初始化 Firebase App Check（reCAPTCHA Enterprise、limited-use tokens），再初始化 Auth、Firestore 與 Firebase AI Logic。`index.html` 已填入公開 site key。
+- Firebase AI Logic Gemini Developer API 已在 Console 啟用（Spark）；AI Monitoring 已關閉。Google Cloud reCAPTCHA Enterprise API 已啟用，並建立只允許 `winebowl0516.github.io` 的網站金鑰。App Check 已註冊至程式使用的 Web App；Google Cloud Billing 未啟用。
 
-1. **完成前端發佈與手動確認**：推送前端更新到 `main` 後，在 GitHub Pages 使用 Google 與 LINE 登入，確認同步狀態顯示「行事曆已同步」，並確認建立、修改、刪除及完成狀態會在另一個瀏覽器載入。未登入時 API 不可存取資料。
-2. **監看同步錯誤與容量**：Worker 單份文件上限約 1.7 MB；目前行程資料通常遠低於此上限。照片與自訂背景未上傳，仍存於本機。
-3. **完成帳號連結流程**：`POST /api/link` 可合併 Google 與 LINE 身分，但前端尚未提供流程；上線前需清楚告知合併規則並處理兩邊既有資料。
-4. **保持設定檔同步**：Cloudflare Dashboard 已配置 `DB` 綁定和 Worker 變數；部署 Worker 的程式碼維護時，`wrangler.jsonc` 也需保持一致。不要把密碼、API token 或其他私密憑證提交到 Git。
+## 完成 Gemini 助理設定
 
-## API 與資料格式速查
+1. 已完成：Firebase AI Logic 使用 Gemini Developer API。
+2. 已完成：建立 GitHub Pages 網域專用的 reCAPTCHA Enterprise site key，並填入 `index.html`。
+3. 已完成：App Check 已將金鑰註冊至程式使用的「日序網站新 Web App」，其餘較舊 Web App 未註冊。
+4. 此版本已送交 `main`；GitHub Pages 部署完成後，仍需手動驗證登入、Firestore 同步與 Gemini 呼叫。
 
-- `GET /api/data`：以 Bearer token 及 `X-Auth-Provider: google|line` 驗證；回傳 `{ revision, data }`。
-- `PUT /api/data`：送出 `{ revision, data }`；成功時 revision 遞增，版本過期回 `409` 並附最新資料。
-- `POST /api/link`：主要身分用一般 Authorization；另一登入方式的 token/provider 放在 `X-Link-Token`、`X-Link-Provider`。
-- Worker 資料格式：`{ entries: [], pet: null, entryTombstones: {}, petUpdatedAt: 0 }`。目前只有行程同步；`updatedAt` 與刪除 tombstone 用於衝突合併。
-- Worker 限制單份文件約 1.7 MB。寵物照片與自訂背景仍儲存在本機，不會計入 Worker 文件。
+## 資料與 API
 
-## 重要注意事項
+- Firestore payload 維持 `{ entries: [], pet: null, entryTombstones: {}, petUpdatedAt: 0 }` 的同步格式，以便保留既有文件相容性；目前網站只操作行程欄位。
+- `GET /api/data` 僅供 Google 帳號尚無 Firestore 文件時匯入舊 D1 資料。
+- Firebase Web App 設定與 reCAPTCHA Enterprise site key 是公開用戶端設定；不得將服務帳戶私鑰放入前端。
 
-- Cloudflare Production 已設定 `FIREBASE_PROJECT_ID=daily-sequence`、`LINE_LOGIN_CHANNEL_ID=2012589296`、`ALLOWED_ORIGIN=https://winebowl0516.github.io`，並將 `DB` 綁定至 `daily-sequence-data`。設定均不是秘密值。
-- `index.html` 含 Firebase Web App 設定與 LIFF ID（前端公開設定）；真正的秘密不可放在前端或提交到版本庫。
-- PRD 含有待產品負責人確認的寵物飢餓速度、復原呈現及代幣平衡等假設，見第 13 節。
-- 專案目前沒有獨立測試／建置流程。改動後至少手動走過登入及核心行程操作，再確認 GitHub Pages 與 Worker 部署結果。
+## 注意事項
+
+- Worker CORS 的 `ALLOWED_ORIGIN` 目前設為 `https://winebowl0516.github.io`。
+- Firebase Firestore 位於 `asia-east1`，資料庫 ID 為 `daily-sequence-data`。
+- 專案沒有獨立建置或自動測試流程。交付時應如實說明是否完成登入、同步及 Gemini 的實際環境驗證。
