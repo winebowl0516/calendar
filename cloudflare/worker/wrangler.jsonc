@@ -6,14 +6,14 @@
   "workers_dev": true,
   "vars": {
     "FIREBASE_PROJECT_ID": "daily-sequence",
-    "LINE_LOGIN_CHANNEL_ID": "REPLACE_WITH_LINE_LOGIN_CHANNEL_ID",
+    "LINE_LOGIN_CHANNEL_ID": "2012589296",
     "ALLOWED_ORIGIN": "https://winebowl0516.github.io"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "daily-sequence-data",
-      "database_id": "REPLACE_AFTER_CREATING_D1_DATABASE",
+      "database_id": "9f7125b0-ac27-4fd1-97ce-4a1f4cbb9378",
       "migrations_dir": "migrations"
     }
   ]

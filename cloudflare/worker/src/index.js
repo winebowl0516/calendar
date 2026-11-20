@@ -64,7 +64,7 @@ export default {
 };
 
 function corsHeaders(request, env) {
-  const headers = new Headers({ 'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Link-Token, X-Link-Provider', 'Access-Control-Max-Age': '86400', 'Vary': 'Origin' });
+  const headers = new Headers({ 'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Auth-Provider, X-Link-Token, X-Link-Provider', 'Access-Control-Max-Age': '86400', 'Vary': 'Origin' });
   if (request.headers.get('Origin') === env.ALLOWED_ORIGIN) headers.set('Access-Control-Allow-Origin', env.ALLOWED_ORIGIN);
   return headers;
 }
@@ -133,14 +133,21 @@ async function googleSigningKeys() {
 }
 
 async function verifyLineToken(token, channelId) {
-  const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ id_token: token, client_id: channelId })
+  const verifyUrl = new URL('https://api.line.me/oauth2/v2.1/verify');
+  verifyUrl.searchParams.set('access_token', token);
+  const verificationResponse = await fetch(verifyUrl);
+  if (!verificationResponse.ok) throw httpError(401, 'Invalid LINE token');
+  const verification = await verificationResponse.json();
+  if (String(verification.client_id) !== String(channelId) || !(verification.expires_in > 0) ||
+      !String(verification.scope || '').split(/\s+/).includes('profile')) throw httpError(401, 'Invalid LINE token');
+
+  const profileResponse = await fetch('https://api.line.me/v2/profile', {
+    headers: { Authorization: `Bearer ${token}` }
   });
-  if (!response.ok) throw httpError(401, 'Invalid LINE token');
-  const claims = await response.json();
-  if (typeof claims.sub !== 'string' || !claims.sub) throw httpError(401, 'Invalid LINE token');
-  return { provider: 'line', subject: claims.sub };
+  if (!profileResponse.ok) throw httpError(401, 'Invalid LINE token');
+  const profile = await profileResponse.json();
+  if (typeof profile.userId !== 'string' || !profile.userId) throw httpError(401, 'Invalid LINE token');
+  return { provider: 'line', subject: profile.userId };
 }
 
 function decodePart(part) { return JSON.parse(new TextDecoder().decode(base64UrlBytes(part))); }

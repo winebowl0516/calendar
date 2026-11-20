@@ -14,7 +14,7 @@
 @media(min-width:901px){.day-card{max-height:calc(100vh - 40px);overflow:auto}}
 
 .auth-gate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 35%,#eef5ef 0%,#f6f7f5 56%,#edf1ec 100%)}.auth-card{width:min(100%,420px);padding:38px 34px;background:#fff;border:1px solid #edf0ed;border-radius:24px;box-shadow:0 24px 70px #25382e14;text-align:center}.auth-logo{width:52px;height:52px;margin:0 auto 20px;border-radius:17px;background:var(--green);color:white;display:grid;place-items:center;font-size:24px}.auth-card h1{font-size:24px;margin:0 0 9px}.auth-copy{margin:0 0 24px;color:#78857d;font-size:13px;line-height:1.7}.google-signin{display:flex;justify-content:center;align-items:center;gap:11px;width:100%;min-height:48px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#34433b;font-weight:650;transition:background .15s,border-color .15s}.google-signin:hover{background:#f8faf8;border-color:#cbd7ce}.line-signin{background:#06c755;border-color:#06c755;color:#fff}.line-signin:hover{background:#05b64c;border-color:#05b64c}.line-mark{font-size:17px;font-weight:800;color:#fff}.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:#9aa49e;font-size:11px}.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--line);flex:1}.auth-buttons{display:grid;gap:10px}.google-signin:disabled{opacity:.65;cursor:wait}.google-mark{font-size:18px;font-weight:800;color:#4285f4}.auth-error{min-height:20px;margin:14px 0 0;color:#b44d3e;font-size:12px;line-height:1.6}.top-user{display:flex;align-items:center;gap:9px}.user-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#e6eee8}.user-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#65736b;font-size:12px}.auth-provider{font-size:10px;color:#8b9790}.signout-btn{border:1px solid var(--line);background:white;color:#526158;border-radius:9px;padding:8px 10px;font-size:11px}.signout-btn:hover{background:#f7faf8}.app[hidden],.top-user[hidden],.auth-gate[hidden]{display:none!important}@media(max-width:560px){.auth-card{padding:30px 23px}.user-name{display:none}.signout-btn{padding:7px 8px}}
-</style>
+.sync-status{font-size:10px;color:#718078;white-space:nowrap}.sync-status[data-state="error"]{color:#b44d3e}.sync-status[data-state="pending"]{color:#996c29}</style>
 </head>
 <body>
 <div id="authGate" class="auth-gate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
@@ -28,7 +28,7 @@
 </div>
 
 <div class="app">
-<header class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2"/></svg></div><span>日序</span></div><div class="topright"><span class="today-pill" id="topToday"></span><div class="top-user" id="topUser" hidden><img class="user-photo" id="userPhoto" alt="" hidden><span class="user-name" id="userName"></span><span class="auth-provider" id="authProvider"></span><button class="signout-btn" id="googleSignOut" type="button">登出</button></div></div></header>
+<header class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2"/></svg></div><span>日序</span></div><div class="topright"><span class="today-pill" id="topToday"></span><div class="top-user" id="topUser" hidden><img class="user-photo" id="userPhoto" alt="" hidden><span class="user-name" id="userName"></span><span class="auth-provider" id="authProvider"></span><span class="sync-status" id="syncStatus" role="status" aria-live="polite"></span><button class="signout-btn" id="googleSignOut" type="button">登出</button></div></div></header>
 <main class="layout"><section class="calendar-card"><div class="cal-head"><div><div class="eyebrow">MONTHLY OVERVIEW</div><h1 id="monthTitle"></h1></div><div class="month-actions"><button class="today-btn" id="todayBtn">今天</button><button id="prevBtn" aria-label="上個月">‹</button><button id="nextBtn" aria-label="下個月">›</button></div></div><div class="cal-grid" id="calendar"></div><div class="cal-foot"><div class="legend"><i class="dot"></i>行程</div><div class="legend"><i class="dot task"></i>任務</div><div class="legend"><i class="dot purple"></i>個人</div></div></section>
 <aside class="side"><section class="day-card"><div class="day-head"><div><div class="eyebrow">DAY DETAILS</div><div class="day-title" id="dayTitle"></div><div class="day-sub" id="daySubtitle"></div></div><button class="add-btn" id="addBtn" aria-label="新增安排">＋</button></div><div id="dayContent"></div><button class="completed-toggle" id="completedToggle"><span id="completedLabel">近 7 天已完成</span><span id="completedChevron">⌄</span></button><div id="completedWrap" hidden><div id="completedList" class="completed-list"></div></div></section><section class="pet-card"><div id="petRoot"></div></section><div class="week-card"><div><strong>保持好節奏</strong><p id="weekSummary">把重要的事，一件一件完成。</p></div><button id="weekJump">看近 7 天 →</button></div></aside></main>
 </div>
@@ -37,6 +37,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js';
+import { mergeSyncDocuments, normalizeSyncDocument, sameSyncDocument } from './sync-client.js';
 
 // TODO: Replace placeholders with this project's Firebase Web App config.
 const firebaseConfig = {
@@ -59,8 +60,22 @@ const signOutButton = document.getElementById('googleSignOut');
 const authProviderLabel = document.getElementById('authProvider');
 const lineButton = document.getElementById('lineSignIn');
 const LINE_LIFF_ID = '2012589296-JHY03hMG';
+// Fill this with the deployed Cloudflare Worker URL after creating the D1 database.
+const SYNC_API_BASE = 'https://daily-sequence-sync.matt05161997.workers.dev';
+const LEGACY_OWNER_STORAGE = 'daily-sequence-legacy-owner-v1';
+const TOMBSTONE_STORAGE = 'daily-sequence-entry-tombstones-v1';
+let activeStorageId = null;
+let activeSyncIdentity = null;
+let syncRevision = 0;
+let syncReady = false;
+let syncGeneration = 0;
+let syncTimer = null;
+let syncQueue = Promise.resolve();
+let entryTombstones = {};
+const syncStatus = document.getElementById('syncStatus');
 let lineProfile = null;
 let lineLiffReady = false;
+let firebaseAuth = null;
 function showAuthError(message) { authError.textContent = message; }
 function setSignedIn(user) {
   const activeUser = user || lineProfile;
@@ -80,10 +95,19 @@ function setSignedIn(user) {
     if (photoURL) userPhoto.src = photoURL;
     googleButton.disabled = false;
     googleButtonLabel.textContent = '切換 Google 帳號';
+    const identity = isLineSession && activeUser.userId
+      ? { provider: 'line', subject: activeUser.userId }
+      : user?.uid ? { provider: 'google', subject: user.uid } : null;
+    if (identity) activateAccount(identity);
   } else {
     userName.textContent = '';
     authProviderLabel.textContent = '';
     userPhoto.removeAttribute('src');
+    syncGeneration++;
+    activeStorageId = null;
+    activeSyncIdentity = null;
+    syncReady = false;
+    setSyncStatus('');
   }
 }
 try {
@@ -92,7 +116,7 @@ try {
   }
   const firebaseApp = initializeApp(firebaseConfig);
   // Optional App Check token can be configured after enabling reCAPTCHA v3 in Firebase.
-  const auth = getAuth(firebaseApp);
+  const auth = firebaseAuth = getAuth(firebaseApp);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   onAuthStateChanged(auth, setSignedIn, error => {
@@ -197,7 +221,90 @@ const sample=[
 {id:'s10',title:'閱讀半小時',type:'personal',date:iso(new Date(today.getFullYear(),today.getMonth(),Math.max(1,today.getDate()-3))),start:'20:00',end:'20:30',note:'',done:true}
 ];
 let entries; try{const stored=localStorage.getItem(STORAGE); entries=stored?JSON.parse(stored):sample;if(!stored)localStorage.setItem(STORAGE,JSON.stringify(entries));if(!Array.isArray(entries))entries=sample}catch{entries=sample}
-const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(entries))}catch{}};
+try{entryTombstones=JSON.parse(localStorage.getItem(TOMBSTONE_STORAGE)||'{}')}catch{entryTombstones={}}
+function accountStorageKey(key){return activeStorageId?`${key}:account:${activeStorageId}`:key}
+function setSyncStatus(message,state=''){if(!syncStatus)return;syncStatus.textContent=message;syncStatus.dataset.state=state}
+function writeLocalCalendar(){try{localStorage.setItem(accountStorageKey(STORAGE),JSON.stringify(entries));localStorage.setItem(accountStorageKey(TOMBSTONE_STORAGE),JSON.stringify(entryTombstones))}catch{toast('瀏覽器儲存空間不足，行事曆變更可能未保存。')}}
+function save(){writeLocalCalendar();queueCloudSync()}
+function nextEntryTimestamp(previous=0){return Math.max(Date.now(),(Number(previous)||0)+1)}
+function currentSyncDocument(){return normalizeSyncDocument({entries,pet:null,entryTombstones,petUpdatedAt:0})}
+function applySyncDocument(value){const doc=normalizeSyncDocument(value);entries=doc.entries;entryTombstones=doc.entryTombstones;writeLocalCalendar();render()}
+function activateAccount(identity){
+  const storageId=encodeURIComponent(`${identity.provider}:${identity.subject}`);
+  if(activeStorageId===storageId)return;
+  syncGeneration++;activeStorageId=storageId;activeSyncIdentity={...identity,key:storageId};syncRevision=0;syncReady=false;
+  const entriesKey=accountStorageKey(STORAGE),petKey=accountStorageKey(PET_STORAGE),tombstoneKey=accountStorageKey(TOMBSTONE_STORAGE);
+  const legacyOwner=localStorage.getItem(LEGACY_OWNER_STORAGE);
+  if(localStorage.getItem(entriesKey)===null){
+    if(!legacyOwner||legacyOwner===storageId){
+      localStorage.setItem(entriesKey,JSON.stringify(entries));
+      localStorage.setItem(petKey,JSON.stringify(petData));
+      localStorage.setItem(tombstoneKey,JSON.stringify(entryTombstones));
+      localStorage.setItem(LEGACY_OWNER_STORAGE,storageId);
+    }else{
+      localStorage.setItem(entriesKey,'[]');localStorage.setItem(petKey,'null');localStorage.setItem(tombstoneKey,'{}');
+    }
+  }
+  try{const value=JSON.parse(localStorage.getItem(entriesKey)||'[]');entries=Array.isArray(value)?value:[]}catch{entries=[]}
+  try{petData=JSON.parse(localStorage.getItem(petKey)||'null')}catch{petData=null}
+  try{entryTombstones=JSON.parse(localStorage.getItem(tombstoneKey)||'{}')}catch{entryTombstones={}}
+  render();void loadCloudDocument(syncGeneration);
+}
+async function syncAccessToken(identity=activeSyncIdentity){
+  if(!identity)throw new Error('No active account');
+  if(identity.provider==='google'){
+    if(!firebaseAuth?.currentUser)throw new Error('Google session expired');
+    return firebaseAuth.currentUser.getIdToken();
+  }
+  if(!window.liff?.isLoggedIn())throw new Error('LINE session expired');
+  const token=window.liff.getAccessToken();if(!token)throw new Error('LINE access token unavailable');return token;
+}
+async function syncRequest(method,body,identity=activeSyncIdentity){
+  const token=await syncAccessToken(identity);
+  const response=await fetch(`${SYNC_API_BASE.replace(/\/$/,'')}/api/data`,{method,headers:{Authorization:`Bearer ${token}`,'X-Auth-Provider':identity.provider,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const payload=await response.json().catch(()=>({}));
+  if(response.status===409)return{...payload,conflict:true};
+  if(!response.ok)throw new Error(payload.error||`Sync failed (${response.status})`);
+  return payload;
+}
+async function writeCloudDocument(value,generation,attempt=0){
+  if(generation!==syncGeneration)return;
+  if(attempt>3)throw new Error('The calendar changed on another device repeatedly.');
+  const identity=activeSyncIdentity;if(!identity)return;
+  const document=normalizeSyncDocument(value);
+  const result=await syncRequest('PUT',{revision:syncRevision,data:document},identity);
+  if(generation!==syncGeneration)return;
+  if(result.conflict){
+    syncRevision=result.revision;
+    const merged=mergeSyncDocuments(result.data,mergeSyncDocuments(document,currentSyncDocument()));
+    applySyncDocument(merged);
+    return writeCloudDocument(merged,generation,attempt+1);
+  }
+  syncRevision=result.revision;
+}
+async function loadCloudDocument(generation){
+  if(!SYNC_API_BASE){setSyncStatus('雲端資料庫尚未部署','pending');return}
+  setSyncStatus('載入雲端行事曆…','pending');
+  try{
+    const identity=activeSyncIdentity;const result=await syncRequest('GET',null,identity);if(generation!==syncGeneration)return;
+    syncRevision=result.revision;
+    const remote=normalizeSyncDocument(result.data),merged=mergeSyncDocuments(remote,currentSyncDocument());
+    applySyncDocument(merged);
+    if(!sameSyncDocument(remote,merged))await writeCloudDocument(merged,generation);
+    if(generation===syncGeneration){syncReady=true;setSyncStatus('行事曆已同步')}
+  }catch(error){if(generation===syncGeneration){syncReady=false;setSyncStatus('雲端載入失敗；資料仍保存在此裝置','error')}console.error('Calendar sync load failed:',error)}
+}
+async function syncLatestDocument(){
+  if(!syncReady||!activeSyncIdentity||!SYNC_API_BASE)return;
+  try{await writeCloudDocument(currentSyncDocument(),syncGeneration);setSyncStatus('行事曆已同步')}
+  catch(error){setSyncStatus('同步失敗；變更仍保存在此裝置','error');console.error('Calendar sync failed:',error)}
+}
+function queueCloudSync(){
+  if(!activeSyncIdentity||!SYNC_API_BASE||!syncReady)return;
+  setSyncStatus('行事曆同步中…','pending');clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{syncQueue=syncQueue.then(syncLatestDocument).catch(error=>console.error('Calendar sync queue failed:',error))},500);
+}
+window.addEventListener('online',()=>{if(activeSyncIdentity){if(syncReady)queueCloudSync();else void loadCloudDocument(syncGeneration)}});
 const typeName={event:'行程',task:'任務',personal:'個人'},sorted=(a,b)=>{const at=a.start||'',bt=b.start||'';return at&&bt?at.localeCompare(bt):at?1:bt?-1:a.title.localeCompare(b.title,'zh-TW')};
 function renderCalendar(){ $('monthTitle').textContent=monthFmt.format(viewMonth);const host=$('calendar');host.innerHTML='';['日','一','二','三','四','五','六'].forEach(w=>{const el=document.createElement('div');el.className='weekday';el.textContent=w;host.append(el)});
  const first=new Date(viewMonth.getFullYear(),viewMonth.getMonth(),1), start=new Date(first);start.setDate(first.getDate()-first.getDay());
@@ -213,7 +320,7 @@ function renderDay(){const d=new Date(selectedDate+'T12:00:00');$('dayTitle').te
 }
 function makeItem(e){const item=document.createElement('article');item.className='item';const bar=document.createElement('div');bar.className='item-bar '+(e.type==='task'?'task':'');const main=document.createElement('div');main.className='item-main';const title=document.createElement('div');title.className='item-title';title.textContent=e.title;const time=document.createElement('div');time.className='item-time';time.textContent=e.start?(e.start+(e.end?` – ${e.end}`:'')):'未設定時間';main.append(title,time);if(e.note){const note=document.createElement('div');note.className='item-note';note.textContent=e.note;main.append(note)}const tag=document.createElement('span');tag.className='type-tag '+(e.type==='task'?'task':'');tag.textContent=typeName[e.type]||'行程';item.append(bar,main,tag);const actions=document.createElement('div');actions.className='item-actions';const edit=document.createElement('button');edit.className='tiny-btn';edit.textContent='編輯';edit.addEventListener('click',()=>openModal(e));const done=document.createElement('button');done.className='tiny-btn done';done.textContent='✓ 完成';done.addEventListener('click',()=>toggleDone(e.id));actions.append(edit,done);item.append(actions);return item}
 function renderCompleted(){const cutoff=new Date(today);cutoff.setDate(cutoff.getDate()-6);const list=entries.filter(e=>e.done&&e.date>=iso(cutoff)&&e.date<=iso(today)).sort((a,b)=>b.date.localeCompare(a.date)||sorted(a,b));$('completedLabel').textContent=`近 7 天已完成${list.length?` · ${list.length}`:''}`;$('completedChevron').textContent=showCompleted?'⌃':'⌄';$('completedWrap').hidden=!showCompleted;const host=$('completedList');host.innerHTML='';if(!list.length){const msg=document.createElement('div');msg.className='empty';msg.textContent='近 7 天還沒有完成的安排';host.append(msg);return}list.forEach(e=>{const row=document.createElement('div');row.className='completed-item';const mark=document.createElement('span');mark.className='checkmark';mark.textContent='✓';const text=document.createElement('span');text.textContent=`${new Date(e.date+'T12:00:00').toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})} · ${e.title}`;row.append(mark,text);host.append(row)});$('weekSummary').textContent=`近 7 天完成了 ${list.length} 件安排，做得很好。`}
-function savePet(){if(!petData)return;try{localStorage.setItem(PET_STORAGE,JSON.stringify(petData))}catch{petToast('瀏覽器儲存空間不足，照片可能太大。')}}
+function savePet(){if(!petData)return;try{localStorage.setItem(accountStorageKey(PET_STORAGE),JSON.stringify(petData))}catch{petToast('瀏覽器儲存空間不足，照片可能太大。')}}
 function tickPet(){if(!petData)return;updatePetState();const root=petRoot;if(root&&root.querySelector('.pet-meter-row'))renderPet()}
 setInterval(tickPet,60000);
 function ensurePet(){if(!petData){petData={name:'豆豆',kind:'cat',photo:'',coins:0,inventory:[],furniture:[],fullness:72,lastFedAt:Date.now(),dead:false,revivedAt:0,bond:0};savePet()}}
@@ -235,11 +342,11 @@ function buyShopItem(id){const item=SHOP.find(x=>x.id===id);if(!item||!petData)r
 function closePetSetup(){$('petSetupOverlay').classList.remove('open')}
 document.querySelectorAll('.pet-choice').forEach(btn=>btn.addEventListener('click',()=>{selectedPet=btn.dataset.pet;pendingPhoto='';$('photoPreview').hidden=true;document.querySelectorAll('.pet-choice').forEach(x=>x.classList.toggle('active',x===btn))}));$('petPhotoInput').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){petToast('請選擇圖片檔案');return}if(file.size>1_500_000){petToast('照片請小於 1.5 MB，方便保存在瀏覽器');e.target.value='';return}const reader=new FileReader();reader.onload=()=>{pendingPhoto=String(reader.result);$('photoPreview').innerHTML=`<img src="${pendingPhoto}" alt="照片預覽">`;$('photoPreview').hidden=false};reader.readAsDataURL(file)});$('petSetupForm').addEventListener('submit',e=>{e.preventDefault();const old=petData;petData={name:$('petNameInput').value.trim()||'豆豆',kind:selectedPet,photo:pendingPhoto,coins:old?.coins||0,inventory:old?.inventory||[],fed:old?.fed||0};savePet();closePetSetup();renderPet();petToast(`歡迎回家，${petData.name}！`)});$('closePetSetup').addEventListener('click',closePetSetup);$('cancelPetSetup').addEventListener('click',closePetSetup);$('petSetupOverlay').addEventListener('click',e=>{if(e.target===$('petSetupOverlay'))closePetSetup()});
 function render(){renderCalendar();renderDay();renderCompleted();renderPet()}
-function toggleDone(id){const e=entries.find(x=>x.id===id);if(!e)return;e.done=!e.done;if(e.done&&e.type==='task'&&!e.rewarded){ensurePet();if(petData){petData.coins+=5;e.rewarded=true;savePet()}}save();render();if(e.done&&e.type==='task'){const root=petRoot;if(root){const el=root.querySelector('#petSpeech');if(el)el.textContent='任務完成了！你真棒，我也替你開心！🪙'}}toast(e.done?(e.type==='task'?'任務完成！獲得 5 枚代幣':'已標示完成'):'已移回待完成')}
+function toggleDone(id){const e=entries.find(x=>x.id===id);if(!e)return;e.done=!e.done;e.updatedAt=nextEntryTimestamp(e.updatedAt);if(e.done&&e.type==='task'&&!e.rewarded){ensurePet();if(petData){petData.coins+=5;e.rewarded=true;savePet()}}save();render();if(e.done&&e.type==='task'){const root=petRoot;if(root){const el=root.querySelector('#petSpeech');if(el)el.textContent='任務完成了！你真棒，我也替你開心！🪙'}}toast(e.done?(e.type==='task'?'任務完成！獲得 5 枚代幣':'已標示完成'):'已移回待完成')}
 function openModal(entry){$('entryForm').reset();$('entryId').value=entry?.id||'';$('modalTitle').textContent=entry?'編輯安排':'新增安排';$('entryTitle').value=entry?.title||'';$('entryType').value=entry?.type||'task';$('entryDate').value=entry?.date||selectedDate;$('startTime').value=entry?.start||'';$('endTime').value=entry?.end||'';$('entryNote').value=entry?.note||'';$('deleteBtn').hidden=!entry;$('overlay').classList.add('open');setTimeout(()=>$('entryTitle').focus(),50)}
 function closeModal(){$('overlay').classList.remove('open')}
-$('entryForm').addEventListener('submit',e=>{e.preventDefault();const id=$('entryId').value,title=$('entryTitle').value.trim(),date=$('entryDate').value,start=$('startTime').value,end=$('endTime').value;if(end&&start&&end<start){toast('結束時間需晚於開始時間');return}const value={id:id||`e-${Date.now()}`,title,type:$('entryType').value,date,start,end,note:$('entryNote').value.trim(),done:false};if(id){const old=entries.find(x=>x.id===id);value.done=old?.done||false;entries=entries.map(x=>x.id===id?value:x)}else entries.push(value);save();selectedDate=date;const d=new Date(date+'T12:00:00');viewMonth=new Date(d.getFullYear(),d.getMonth(),1);closeModal();render();toast(id?'已更新安排':'已新增安排')});
-$('deleteBtn').addEventListener('click',()=>{const id=$('entryId').value;if(!id)return;entries=entries.filter(x=>x.id!==id);save();closeModal();render();toast('已刪除安排')});
+$('entryForm').addEventListener('submit',e=>{e.preventDefault();const id=$('entryId').value,title=$('entryTitle').value.trim(),date=$('entryDate').value,start=$('startTime').value,end=$('endTime').value;if(end&&start&&end<start){toast('結束時間需晚於開始時間');return}const old=id?entries.find(x=>x.id===id):null;const value={id:id||`e-${Date.now()}`,title,type:$('entryType').value,date,start,end,note:$('entryNote').value.trim(),done:old?.done||false,updatedAt:nextEntryTimestamp(old?.updatedAt)};if(id){entries=entries.map(x=>x.id===id?value:x);delete entryTombstones[id]}else entries.push(value);save();selectedDate=date;const d=new Date(date+'T12:00:00');viewMonth=new Date(d.getFullYear(),d.getMonth(),1);closeModal();render();toast(id?'已更新安排':'已新增安排')});
+$('deleteBtn').addEventListener('click',()=>{const id=$('entryId').value;if(!id)return;const old=entries.find(x=>x.id===id);entries=entries.filter(x=>x.id!==id);entryTombstones[id]=nextEntryTimestamp(old?.updatedAt);save();closeModal();render();toast('已刪除安排')});
 $('addBtn').addEventListener('click',()=>openModal());$('closeModal').addEventListener('click',closeModal);$('cancelModal').addEventListener('click',closeModal);$('overlay').addEventListener('click',e=>{if(e.target===$('overlay'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});$('completedToggle').addEventListener('click',()=>{showCompleted=!showCompleted;renderCompleted()});$('prevBtn').addEventListener('click',()=>{viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-1,1);renderCalendar()});$('nextBtn').addEventListener('click',()=>{viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()+1,1);renderCalendar()});$('todayBtn').addEventListener('click',()=>{viewMonth=new Date(today.getFullYear(),today.getMonth(),1);selectedDate=iso(today);render()});$('weekJump').addEventListener('click',()=>{showCompleted=true;renderCompleted();$('completedWrap').scrollIntoView({behavior:'smooth',block:'nearest'})});
 function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2200)}
 $('topToday').textContent=new Intl.DateTimeFormat('zh-TW',{year:'numeric',month:'long',day:'numeric'}).format(today);render();
