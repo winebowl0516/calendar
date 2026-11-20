@@ -9,6 +9,14 @@ export default {
     if (!url.pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404, cors);
     if (request.headers.get('Origin') !== env.ALLOWED_ORIGIN) return json({ error: 'Origin not allowed' }, 403, cors);
     try {
+      if (url.pathname === '/api/auth/line' && request.method === 'POST') {
+        const body = await readJson(request);
+        if (typeof body.accessToken !== 'string' || !body.accessToken) return json({ error: 'Missing LINE access token' }, 400, cors);
+        const identity = await verifyLineToken(body.accessToken, env.LINE_LOGIN_CHANNEL_ID);
+        const firebaseUid = `line_${identity.subject}`;
+        const customToken = await createFirebaseCustomToken(firebaseUid, env);
+        return json({ customToken, uid: firebaseUid }, 200, cors);
+      }
       if (url.pathname === '/api/data' && request.method === 'GET') {
         const identity = await authenticate(request, env);
         const row = await accountForIdentity(identity, env.DB);
@@ -150,7 +158,41 @@ async function verifyLineToken(token, channelId) {
   return { provider: 'line', subject: profile.userId };
 }
 
+async function createFirebaseCustomToken(uid, env) {
+  const serviceAccountEmail = env.FIREBASE_SERVICE_ACCOUNT_EMAIL;
+  const privateKeyPem = env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY;
+  if (!serviceAccountEmail || !privateKeyPem) throw httpError(503, 'LINE Firebase sign-in is not configured');
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
+  const claims = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
+    iss: serviceAccountEmail,
+    sub: serviceAccountEmail,
+    aud: 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
+    iat: now,
+    exp: now + 3600,
+    uid,
+    claims: { provider: 'line' }
+  })));
+  const unsignedToken = `${header}.${claims}`;
+  const normalizedPem = privateKeyPem.replace(/\\n/g, '\n');
+  const encodedKey = normalizedPem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, '');
+  let binaryKey;
+  try { binaryKey = Uint8Array.from(atob(encodedKey), character => character.charCodeAt(0)); }
+  catch { throw httpError(500, 'Firebase signing key is invalid'); }
+  let signingKey;
+  try {
+    signingKey = await crypto.subtle.importKey('pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  } catch { throw httpError(500, 'Firebase signing key is invalid'); }
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', signingKey, new TextEncoder().encode(unsignedToken));
+  return `${unsignedToken}.${base64UrlEncode(new Uint8Array(signature))}`;
+}
+
 function decodePart(part) { return JSON.parse(new TextDecoder().decode(base64UrlBytes(part))); }
+function base64UrlEncode(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
 function base64UrlBytes(value) {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   const binary = atob(normalized + '='.repeat((4 - normalized.length % 4) % 4));
@@ -191,3 +233,10 @@ function mergeDocuments(first, second) {
 }
 
 function httpError(status, message) { return Object.assign(new Error(message), { status }); }
+function shortText(value, limit) { return typeof value === 'string' ? value.slice(0, limit) : ''; }
+function isValidDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+function isValidTime(value) { return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value); }
